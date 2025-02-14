@@ -8,6 +8,15 @@ auth_bp = Blueprint('auth', __name__)
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 user_bp = Blueprint('user', __name__, url_prefix='/user')
 
+# Root route
+@auth_bp.route('/')
+def index():
+    if current_user.is_authenticated:
+        if current_user.is_admin:
+            return redirect(url_for('admin.dashboard'))
+        return redirect(url_for('user.dashboard'))
+    return redirect(url_for('auth.login'))
+
 # Auth routes
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -27,17 +36,33 @@ def register():
         username = request.form.get('username')
         email = request.form.get('email')
         password = request.form.get('password')
-        
+
+        # Check if username or email already exists
         if User.query.filter_by(username=username).first():
             flash('Username already exists')
             return redirect(url_for('auth.register'))
-            
+        if User.query.filter_by(email=email).first():
+            flash('Email already exists')
+            return redirect(url_for('auth.register'))
+
+        # Create new user
         user = User(username=username, email=email)
         user.set_password(password)
-        db.session.add(user)
-        db.session.commit()
-        flash('Registration successful')
-        return redirect(url_for('auth.login'))
+
+        # Set first user as admin
+        if User.query.count() == 0:
+            user.is_admin = True
+
+        try:
+            db.session.add(user)
+            db.session.commit()
+            flash('Registration successful! Please login.')
+            return redirect(url_for('auth.login'))
+        except Exception as e:
+            db.session.rollback()
+            flash('An error occurred during registration')
+            return redirect(url_for('auth.register'))
+
     return render_template('auth/register.html')
 
 @auth_bp.route('/logout')
@@ -113,7 +138,7 @@ def submit_quiz(quiz_id):
         answer = request.form.get(f'question_{question.id}')
         if answer == question.correct_answer:
             score += 1
-    
+
     attempt = QuizAttempt(user_id=current_user.id, quiz_id=quiz_id, score=score)
     db.session.add(attempt)
     db.session.commit()
