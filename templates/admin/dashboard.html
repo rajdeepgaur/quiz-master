@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>Subjects</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin.add_subject') }}" class="mb-3">
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="name" placeholder="Subject name" required>
+                        <button type="submit" class="btn btn-primary">Add Subject</button>
+                    </div>
+                </form>
+                <div class="list-group">
+                    {% for subject in subjects %}
+                    <div class="list-group-item">
+                        <h5>{{ subject.name }}</h5>
+                        <form method="POST" action="{{ url_for('admin.add_chapter') }}" class="mt-2">
+                            <input type="hidden" name="subject_id" value="{{ subject.id }}">
+                            <div class="input-group">
+                                <input type="text" class="form-control" name="name" placeholder="Chapter name" required>
+                                <button type="submit" class="btn btn-secondary">Add Chapter</button>
+                            </div>
+                        </form>
+                        <div class="ms-3 mt-2">
+                            {% for chapter in subject.chapters %}
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <span>{{ chapter.name }}</span>
+                                <a href="{{ url_for('admin.manage_quiz', chapter_id=chapter.id) }}" 
+                                   class="btn btn-sm btn-info">Manage Quizzes</a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4>Statistics</h4>
+            </div>
+            <div class="card-body">
+                <canvas id="statsChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{% endblock %}
