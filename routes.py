@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_user, logout_user, login_required, current_user
 from app import db
 from models import User, Subject, Chapter, Quiz, Question, QuizAttempt
-from datetime import datetime
+from datetime import datetime, timedelta
 
 auth_bp = Blueprint('auth', __name__)
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -118,6 +118,69 @@ def manage_quiz(chapter_id):
         return redirect(url_for('user.dashboard'))
     chapter = Chapter.query.get_or_404(chapter_id)
     return render_template('admin/quiz_management.html', chapter=chapter)
+
+@admin_bp.route('/quiz/add/<int:chapter_id>', methods=['POST'])
+@login_required
+def add_quiz(chapter_id):
+    if not current_user.is_admin:
+        return redirect(url_for('user.dashboard'))
+
+    if request.method == 'POST':
+        try:
+            # Get quiz details from form
+            title = request.form.get('title')
+            start_date = datetime.strptime(request.form.get('start_date'), '%Y-%m-%dT%H:%M')
+            duration = int(request.form.get('duration'))
+
+            # Calculate end date based on duration
+            end_date = start_date + timedelta(minutes=duration)
+
+            # Create quiz
+            quiz = Quiz(
+                title=title,
+                chapter_id=chapter_id,
+                duration=duration,
+                start_date=start_date,
+                end_date=end_date
+            )
+            db.session.add(quiz)
+            db.session.flush()  # Get quiz.id before committing
+
+            # Process questions
+            questions_data = {}
+            for key, value in request.form.items():
+                if key.startswith('questions['):
+                    # Parse question index and field from the name
+                    # questions[0][text] -> idx=0, field=text
+                    parts = key.replace('questions[', '').replace(']', ' ').split()
+                    idx, field = parts[0], parts[1].replace('[', '').replace(']', '')
+
+                    if idx not in questions_data:
+                        questions_data[idx] = {}
+                    questions_data[idx][field] = value
+
+            # Create Question objects
+            for idx, q_data in questions_data.items():
+                if 'text' in q_data:  # Ensure we have complete question data
+                    question = Question(
+                        quiz_id=quiz.id,
+                        question_text=q_data['text'],
+                        option_a=q_data['option_a'],
+                        option_b=q_data['option_b'],
+                        option_c=q_data['option_c'],
+                        option_d=q_data['option_d'],
+                        correct_answer=q_data['correct']
+                    )
+                    db.session.add(question)
+
+            db.session.commit()
+            flash('Quiz created successfully!')
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error creating quiz: {str(e)}')
+
+        return redirect(url_for('admin.manage_quiz', chapter_id=chapter_id))
 
 # User routes
 @user_bp.route('/dashboard')
