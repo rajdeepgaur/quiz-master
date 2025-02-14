@@ -1,83 +1,66 @@
 {% extends "base.html" %}
 
-{% block title %}Quiz Management{% endblock %}
+{% block title %}Edit Quiz{% endblock %}
 
 {% block content %}
 <div class="card">
     <div class="card-header">
-        <h4>Manage Quiz - {{ chapter.name }}</h4>
+        <h4>Edit Quiz - {{ quiz.title }}</h4>
     </div>
     <div class="card-body">
-        <!-- List of existing quizzes -->
-        {% if chapter.quizzes %}
-        <div class="mb-4">
-            <h5>Existing Quizzes</h5>
-            <div class="list-group">
-                {% for quiz in chapter.quizzes %}
-                <div class="list-group-item">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h6 class="mb-1">{{ quiz.title }}</h6>
-                        <div>
-                            <a href="{{ url_for('admin.edit_quiz', quiz_id=quiz.id) }}" 
-                               class="btn btn-warning btn-sm">Edit</a>
-                        </div>
-                    </div>
-                    <small class="text-muted">
-                        Start: {{ quiz.start_date.strftime('%Y-%m-%d %H:%M') }} | 
-                        Duration: {{ quiz.duration }} minutes
-                    </small>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-
-        <!-- Form to add new quiz -->
-        <h5>Add New Quiz</h5>
-        <form id="quizForm" method="POST" action="{{ url_for('admin.add_quiz', chapter_id=chapter.id) }}">
+        <form id="quizForm" method="POST" action="{{ url_for('admin.update_quiz', quiz_id=quiz.id) }}">
             <div class="mb-3">
                 <label class="form-label">Quiz Title</label>
-                <input type="text" class="form-control" name="title" required>
+                <input type="text" class="form-control" name="title" value="{{ quiz.title }}" required>
             </div>
             <div class="row mb-3">
                 <div class="col">
                     <label class="form-label">Start Date</label>
-                    <input type="datetime-local" class="form-control" name="start_date" required>
+                    <input type="datetime-local" class="form-control" name="start_date" 
+                           value="{{ quiz.start_date.strftime('%Y-%m-%dT%H:%M') }}" required>
                 </div>
                 <div class="col">
                     <label class="form-label">Duration (minutes)</label>
-                    <input type="number" class="form-control" name="duration" required>
+                    <input type="number" class="form-control" name="duration" value="{{ quiz.duration }}" required>
                 </div>
             </div>
-
+            
             <div id="questions">
+                {% for question in quiz.questions %}
                 <div class="question-block mb-4">
-                    <h5>Question 1</h5>
+                    <h5>Question {{ loop.index }}</h5>
                     <div class="mb-3">
                         <label class="form-label">Question Text</label>
-                        <textarea class="form-control" name="questions[0][text]" required></textarea>
+                        <textarea class="form-control" name="questions[{{ loop.index0 }}][text]" required>{{ question.question_text }}</textarea>
+                        <input type="hidden" name="questions[{{ loop.index0 }}][id]" value="{{ question.id }}">
                     </div>
                     <div class="mb-2">
                         <label class="form-label">Options</label>
-                        <input type="text" class="form-control mb-2" name="questions[0][option_a]" placeholder="Option A" required>
-                        <input type="text" class="form-control mb-2" name="questions[0][option_b]" placeholder="Option B" required>
-                        <input type="text" class="form-control mb-2" name="questions[0][option_c]" placeholder="Option C" required>
-                        <input type="text" class="form-control mb-2" name="questions[0][option_d]" placeholder="Option D" required>
+                        <input type="text" class="form-control mb-2" name="questions[{{ loop.index0 }}][option_a]" 
+                               placeholder="Option A" value="{{ question.option_a }}" required>
+                        <input type="text" class="form-control mb-2" name="questions[{{ loop.index0 }}][option_b]" 
+                               placeholder="Option B" value="{{ question.option_b }}" required>
+                        <input type="text" class="form-control mb-2" name="questions[{{ loop.index0 }}][option_c]" 
+                               placeholder="Option C" value="{{ question.option_c }}" required>
+                        <input type="text" class="form-control mb-2" name="questions[{{ loop.index0 }}][option_d]" 
+                               placeholder="Option D" value="{{ question.option_d }}" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Correct Answer</label>
-                        <select class="form-control" name="questions[0][correct]" required>
-                            <option value="A">A</option>
-                            <option value="B">B</option>
-                            <option value="C">C</option>
-                            <option value="D">D</option>
+                        <select class="form-control" name="questions[{{ loop.index0 }}][correct]" required>
+                            {% for option in ['A', 'B', 'C', 'D'] %}
+                            <option value="{{ option }}" {% if question.correct_answer == option %}selected{% endif %}>
+                                {{ option }}
+                            </option>
+                            {% endfor %}
                         </select>
                     </div>
                 </div>
+                {% endfor %}
             </div>
-
+            
             <button type="button" class="btn btn-secondary mb-3" onclick="addQuestion()">Add Question</button>
-            <button type="submit" class="btn btn-primary">Save Quiz</button>
+            <button type="submit" class="btn btn-primary">Update Quiz</button>
         </form>
     </div>
 </div>
@@ -85,7 +68,7 @@
 
 {% block scripts %}
 <script>
-let questionCount = 1;
+let questionCount = {{ quiz.questions|length }};
 
 function addQuestion() {
     const template = `
@@ -113,7 +96,7 @@ function addQuestion() {
             </div>
         </div>
     `;
-
+    
     document.getElementById('questions').insertAdjacentHTML('beforeend', template);
     questionCount++;
 }
