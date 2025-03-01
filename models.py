@@ -13,7 +13,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256))
     is_admin = db.Column(db.Boolean, default=False)
-    quiz_attempts = db.relationship('QuizAttempt', backref='user', lazy=True)
+    quiz_attempts = db.relationship('QuizAttempt', backref='user', lazy=True, cascade='all, delete-orphan')
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -24,13 +24,13 @@ class User(UserMixin, db.Model):
 class Subject(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    chapters = db.relationship('Chapter', backref='subject', lazy=True)
+    chapters = db.relationship('Chapter', backref='subject', lazy=True, cascade='all, delete-orphan')
 
 class Chapter(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
-    quizzes = db.relationship('Quiz', backref='chapter', lazy=True)
+    quizzes = db.relationship('Quiz', backref='chapter', lazy=True, cascade='all, delete-orphan')
 
 class Quiz(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -39,8 +39,8 @@ class Quiz(db.Model):
     duration = db.Column(db.Integer)  # Duration in minutes
     start_date = db.Column(db.DateTime, nullable=False)
     end_date = db.Column(db.DateTime, nullable=False)
-    questions = db.relationship('Question', backref='quiz', lazy=True)
-    attempts = db.relationship('QuizAttempt', backref='quiz', lazy=True)
+    questions = db.relationship('Question', backref='quiz', lazy=True, cascade='all, delete-orphan')
+    attempts = db.relationship('QuizAttempt', backref='quiz', lazy=True, cascade='all, delete-orphan')
 
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
