@@ -51,7 +51,7 @@
         </div>
     </div>
     <div class="col-md-6">
-        <div class="card">
+        <div class="card mb-4">
             <div class="card-header">
                 <h4>Statistics</h4>
             </div>
@@ -59,11 +59,24 @@
                 <canvas id="statsChart"></canvas>
             </div>
         </div>
+        <div class="card">
+            <div class="card-header">
+                <h4>Subject Distribution</h4>
+            </div>
+            <div class="card-body">
+                <canvas id="subjectStats"></canvas>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
+<script>
+    // Pass chart data to JavaScript
+    const statsData = {{ stats|tojson|safe }};
+    const subjectChartData = {{ subject_chart_data|tojson|safe }};
+</script>
 <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
 <script>
 function deleteSubject(id) {

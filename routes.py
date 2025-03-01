@@ -3,6 +3,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from app import db
 from models import User, Subject, Chapter, Quiz, Question, QuizAttempt
 from datetime import datetime, timedelta
+from sqlalchemy import func
 
 auth_bp = Blueprint('auth', __name__)
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -85,8 +86,33 @@ def dashboard():
     if not current_user.is_admin:
         return redirect(url_for('user.user_dashboard'))
     subjects = Subject.query.all()
-    users = User.query.filter_by(is_admin=False).all()
-    return render_template('admin/dashboard.html', subjects=subjects, users=users)
+
+    # Get statistics for admin dashboard
+    stats = {
+        'total_users': User.query.filter_by(is_admin=False).count(),
+        'active_quizzes': Quiz.query.filter(
+            Quiz.start_date <= datetime.utcnow(),
+            Quiz.end_date >= datetime.utcnow()
+        ).count(),
+        'completed_attempts': QuizAttempt.query.count(),
+        'avg_score': db.session.query(func.avg(QuizAttempt.score)).scalar() or 0
+    }
+
+    # Get subject statistics
+    subject_stats = db.session.query(
+        Subject.name,
+        func.count(Quiz.id).label('quiz_count')
+    ).join(Chapter).join(Quiz).group_by(Subject.name).all()
+
+    subject_chart_data = {
+        'labels': [s[0] for s in subject_stats],
+        'data': [s[1] for s in subject_stats]
+    }
+
+    return render_template('admin/dashboard.html', 
+                         subjects=subjects,
+                         stats=stats,
+                         subject_chart_data=subject_chart_data)
 
 @admin_bp.route('/subject/add', methods=['POST'])
 @login_required
@@ -261,8 +287,38 @@ def update_quiz(quiz_id):
 @login_required
 def user_dashboard():
     subjects = Subject.query.all()
-    attempts = QuizAttempt.query.filter_by(user_id=current_user.id).all()
-    return render_template('user/dashboard.html', subjects=subjects, attempts=attempts)
+
+    # Get user's recent attempts
+    attempts = QuizAttempt.query.filter_by(user_id=current_user.id)\
+        .order_by(QuizAttempt.completed_at.desc())\
+        .limit(5).all()
+
+    # Get monthly progress data
+    six_months_ago = datetime.utcnow() - timedelta(days=180)
+    monthly_scores = db.session.query(
+        func.date_trunc('month', QuizAttempt.completed_at).label('month'),
+        func.avg(QuizAttempt.score).label('avg_score')
+    ).filter(
+        QuizAttempt.user_id == current_user.id,
+        QuizAttempt.completed_at >= six_months_ago
+    ).group_by('month').order_by('month').all()
+
+    # Format data for Chart.js
+    labels = []
+    scores = []
+    for month, score in monthly_scores:
+        labels.append(month.strftime('%b %Y'))
+        scores.append(round(score, 2))
+
+    chart_data = {
+        'labels': labels,
+        'scores': scores
+    }
+
+    return render_template('user/dashboard.html', 
+                         subjects=subjects, 
+                         attempts=attempts, 
+                         chart_data=chart_data)
 
 @user_bp.route('/quiz/<int:quiz_id>')
 @login_required

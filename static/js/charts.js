@@ -2,14 +2,14 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Progress chart for user dashboard
     const progressChart = document.getElementById('progressChart');
-    if (progressChart) {
+    if (progressChart && typeof chartData !== 'undefined') {
         new Chart(progressChart, {
             type: 'line',
             data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                labels: chartData.labels,
                 datasets: [{
                     label: 'Quiz Scores',
-                    data: [65, 78, 82, 75, 88, 95],
+                    data: chartData.scores,
                     borderColor: '#0dcaf0',
                     tension: 0.1,
                     fill: false
@@ -34,13 +34,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Stats chart for admin dashboard
     const statsChart = document.getElementById('statsChart');
-    if (statsChart) {
+    if (statsChart && typeof statsData !== 'undefined') {
         new Chart(statsChart, {
             type: 'bar',
             data: {
                 labels: ['Total Users', 'Active Quizzes', 'Completed Attempts', 'Avg Score'],
                 datasets: [{
-                    data: [150, 45, 320, 78],
+                    data: [
+                        statsData.total_users,
+                        statsData.active_quizzes,
+                        statsData.completed_attempts,
+                        Math.round(statsData.avg_score)
+                    ],
                     backgroundColor: [
                         '#0d6efd',
                         '#198754',
@@ -67,18 +72,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Subject statistics chart
     const subjectStats = document.getElementById('subjectStats');
-    if (subjectStats) {
+    if (subjectStats && typeof subjectChartData !== 'undefined') {
         new Chart(subjectStats, {
             type: 'doughnut',
             data: {
-                labels: ['Mathematics', 'Science', 'History', 'English'],
+                labels: subjectChartData.labels,
                 datasets: [{
-                    data: [30, 25, 20, 25],
+                    data: subjectChartData.data,
                     backgroundColor: [
                         '#0d6efd',
                         '#198754',
                         '#ffc107',
-                        '#0dcaf0'
+                        '#0dcaf0',
+                        '#6c757d',
+                        '#dc3545'
                     ]
                 }]
             },
