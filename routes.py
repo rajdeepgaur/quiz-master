@@ -14,7 +14,7 @@ def index():
     if current_user.is_authenticated:
         if current_user.is_admin:
             return redirect(url_for('admin.dashboard'))
-        return redirect(url_for('user.dashboard'))
+        return redirect(url_for('user.user_dashboard'))
     return redirect(url_for('auth.login'))
 
 # Auth routes
@@ -32,7 +32,7 @@ def login():
 
             if user.is_admin:
                 return redirect(url_for('admin.dashboard'))
-            return redirect(url_for('user.dashboard'))
+            return redirect(url_for('user.user_dashboard'))
 
         flash('Invalid username or password')
     return render_template('auth/login.html')
@@ -83,7 +83,7 @@ def logout():
 @login_required
 def dashboard():
     if not current_user.is_admin:
-        return redirect(url_for('user.dashboard'))
+        return redirect(url_for('user.user_dashboard'))
     subjects = Subject.query.all()
     users = User.query.filter_by(is_admin=False).all()
     return render_template('admin/dashboard.html', subjects=subjects, users=users)
@@ -92,7 +92,7 @@ def dashboard():
 @login_required
 def add_subject():
     if not current_user.is_admin:
-        return redirect(url_for('user.dashboard'))
+        return redirect(url_for('user.user_dashboard'))
     name = request.form.get('name')
     subject = Subject(name=name)
     db.session.add(subject)
@@ -103,7 +103,7 @@ def add_subject():
 @login_required
 def add_chapter():
     if not current_user.is_admin:
-        return redirect(url_for('user.dashboard'))
+        return redirect(url_for('user.user_dashboard'))
     name = request.form.get('name')
     subject_id = request.form.get('subject_id')
     chapter = Chapter(name=name, subject_id=subject_id)
@@ -115,7 +115,7 @@ def add_chapter():
 @login_required
 def manage_quiz(chapter_id):
     if not current_user.is_admin:
-        return redirect(url_for('user.dashboard'))
+        return redirect(url_for('user.user_dashboard'))
     chapter = Chapter.query.get_or_404(chapter_id)
     return render_template('admin/quiz_management.html', chapter=chapter)
 
@@ -123,7 +123,7 @@ def manage_quiz(chapter_id):
 @login_required
 def add_quiz(chapter_id):
     if not current_user.is_admin:
-        return redirect(url_for('user.dashboard'))
+        return redirect(url_for('user.user_dashboard'))
 
     if request.method == 'POST':
         try:
@@ -186,7 +186,7 @@ def add_quiz(chapter_id):
 @login_required
 def edit_quiz(quiz_id):
     if not current_user.is_admin:
-        return redirect(url_for('user.dashboard'))
+        return redirect(url_for('user.user_dashboard'))
     quiz = Quiz.query.get_or_404(quiz_id)
     return render_template('admin/edit_quiz.html', quiz=quiz)
 
@@ -194,7 +194,7 @@ def edit_quiz(quiz_id):
 @login_required
 def update_quiz(quiz_id):
     if not current_user.is_admin:
-        return redirect(url_for('user.dashboard'))
+        return redirect(url_for('user.user_dashboard'))
 
     quiz = Quiz.query.get_or_404(quiz_id)
 
@@ -268,7 +268,7 @@ def take_quiz(quiz_id):
     quiz = Quiz.query.get_or_404(quiz_id)
     if datetime.utcnow() < quiz.start_date or datetime.utcnow() > quiz.end_date:
         flash('Quiz is not available at this time')
-        return redirect(url_for('user.dashboard'))
+        return redirect(url_for('user.user_dashboard'))
     return render_template('user/quiz.html', quiz=quiz)
 
 @user_bp.route('/quiz/<int:quiz_id>/submit', methods=['POST'])
@@ -285,4 +285,4 @@ def submit_quiz(quiz_id):
     db.session.add(attempt)
     db.session.commit()
     flash(f'Quiz submitted! Your score: {score}/{len(quiz.questions)}')
-    return redirect(url_for('user.dashboard'))
+    return redirect(url_for('user.user_dashboard'))
