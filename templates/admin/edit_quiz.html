@@ -15,16 +15,16 @@
             </div>
             <div class="row mb-3">
                 <div class="col">
-                    <label class="form-label">Start Date</label>
-                    <input type="datetime-local" class="form-control" name="start_date" 
-                           value="{{ quiz.start_date.strftime('%Y-%m-%dT%H:%M') }}" required>
+                    <label class="form-label">Date</label>
+                    <input type="date" class="form-control" name="start_date" 
+                           value="{{ quiz.start_date.strftime('%Y-%m-%d') }}" required>
                 </div>
                 <div class="col">
                     <label class="form-label">Duration (minutes)</label>
                     <input type="number" class="form-control" name="duration" value="{{ quiz.duration }}" required>
                 </div>
             </div>
-            
+
             <div id="questions">
                 {% for question in quiz.questions %}
                 <div class="question-block mb-4">
@@ -58,7 +58,7 @@
                 </div>
                 {% endfor %}
             </div>
-            
+
             <button type="button" class="btn btn-secondary mb-3" onclick="addQuestion()">Add Question</button>
             <button type="submit" class="btn btn-primary">Update Quiz</button>
         </form>
@@ -96,7 +96,7 @@ function addQuestion() {
             </div>
         </div>
     `;
-    
+
     document.getElementById('questions').insertAdjacentHTML('beforeend', template);
     questionCount++;
 }

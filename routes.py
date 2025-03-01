@@ -129,11 +129,12 @@ def add_quiz(chapter_id):
         try:
             # Get quiz details from form
             title = request.form.get('title')
-            start_date = datetime.strptime(request.form.get('start_date'), '%Y-%m-%dT%H:%M')
+            start_date = datetime.strptime(request.form.get('start_date'), '%Y-%m-%d')
             duration = int(request.form.get('duration'))
 
-            # Calculate end date based on duration
-            end_date = start_date + timedelta(minutes=duration)
+            # Set start time to beginning of day and end time to end of day
+            start_date = start_date.replace(hour=0, minute=0, second=0)
+            end_date = start_date.replace(hour=23, minute=59, second=59)
 
             # Create quiz
             quiz = Quiz(
@@ -150,8 +151,6 @@ def add_quiz(chapter_id):
             questions_data = {}
             for key, value in request.form.items():
                 if key.startswith('questions['):
-                    # Parse question index and field from the name
-                    # questions[0][text] -> idx=0, field=text
                     parts = key.replace('questions[', '').replace(']', ' ').split()
                     idx, field = parts[0], parts[1].replace('[', '').replace(']', '')
 
@@ -201,9 +200,12 @@ def update_quiz(quiz_id):
     try:
         # Update quiz details
         quiz.title = request.form.get('title')
-        quiz.start_date = datetime.strptime(request.form.get('start_date'), '%Y-%m-%dT%H:%M')
+        start_date = datetime.strptime(request.form.get('start_date'), '%Y-%m-%d')
         quiz.duration = int(request.form.get('duration'))
-        quiz.end_date = quiz.start_date + timedelta(minutes=quiz.duration)
+
+        # Set start time to beginning of day and end time to end of day
+        quiz.start_date = start_date.replace(hour=0, minute=0, second=0)
+        quiz.end_date = start_date.replace(hour=23, minute=59, second=59)
 
         # Process questions
         questions_data = {}
