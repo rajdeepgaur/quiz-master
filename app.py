@@ -14,16 +14,12 @@ login_manager = LoginManager()
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "your-secret-key")
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///quizmaster.db")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_size": 5,
     "pool_recycle": 300,
-    "pool_pre_ping": True,
-    "connect_args": {
-        "sslmode": "require",
-        "connect_timeout": 10
-    }
+    "pool_pre_ping": True
 }
 
 db.init_app(app)

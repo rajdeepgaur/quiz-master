@@ -1,0 +1,11 @@
+email-validator
+flask-wtf
+flask
+flask-login
+flask-sqlalchemy
+gunicorn
+psycopg2-binary
+routes
+sqlalchemy
+werkzeug
+twilio

@@ -299,20 +299,35 @@ def user_dashboard():
 
     # Get monthly progress data
     six_months_ago = datetime.utcnow() - timedelta(days=180)
-    monthly_scores = db.session.query(
-        func.date_trunc('month', QuizAttempt.completed_at).label('month'),
-        func.avg(QuizAttempt.score).label('avg_score')
-    ).filter(
-        QuizAttempt.user_id == current_user.id,
-        QuizAttempt.completed_at >= six_months_ago
-    ).group_by('month').order_by('month').all()
+
+    # Use database-agnostic date formatting
+    if 'sqlite' in str(db.engine.url):
+        # SQLite date formatting
+        monthly_scores = db.session.query(
+            func.strftime('%Y-%m', QuizAttempt.completed_at).label('month'),
+            func.avg(QuizAttempt.score).label('avg_score')
+        ).filter(
+            QuizAttempt.user_id == current_user.id,
+            QuizAttempt.completed_at >= six_months_ago
+        ).group_by('month').order_by('month').all()
+    else:
+        # PostgreSQL date formatting
+        monthly_scores = db.session.query(
+            func.to_char(QuizAttempt.completed_at, 'YYYY-MM').label('month'),
+            func.avg(QuizAttempt.score).label('avg_score')
+        ).filter(
+            QuizAttempt.user_id == current_user.id,
+            QuizAttempt.completed_at >= six_months_ago
+        ).group_by('month').order_by('month').all()
 
     # Format data for Chart.js
     labels = []
     scores = []
-    for month, score in monthly_scores:
-        labels.append(month.strftime('%b %Y'))
-        scores.append(round(score, 2))
+    for month_str, score in monthly_scores:
+        # Convert YYYY-MM to Month Year format
+        month_date = datetime.strptime(month_str, '%Y-%m')
+        labels.append(month_date.strftime('%b %Y'))
+        scores.append(round(float(score) if score else 0, 2))
 
     chart_data = {
         'labels': labels,
