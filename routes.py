@@ -98,11 +98,15 @@ def dashboard():
         'avg_score': db.session.query(func.avg(QuizAttempt.score)).scalar() or 0
     }
 
-    # Get subject statistics
+    # Get subject statistics with explicit joins
     subject_stats = db.session.query(
         Subject.name,
         func.count(Quiz.id).label('quiz_count')
-    ).join(Chapter).join(Quiz).group_by(Subject.name).all()
+    ).select_from(Subject)\
+    .outerjoin(Chapter, Chapter.subject_id == Subject.id)\
+    .outerjoin(Quiz, Quiz.chapter_id == Chapter.id)\
+    .group_by(Subject.name)\
+    .all()
 
     subject_chart_data = {
         'labels': [s[0] for s in subject_stats],
