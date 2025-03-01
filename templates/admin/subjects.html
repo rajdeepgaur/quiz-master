@@ -33,7 +33,7 @@
                                 </button>
                             </div>
                         </div>
-                        
+
                         <div class="collapse mt-3" id="chapters{{ subject.id }}">
                             <div class="card card-body bg-dark">
                                 <h6>Chapters</h6>
@@ -69,62 +69,7 @@
             </div>
         </div>
     </div>
-    
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h4>Subject Statistics</h4>
-            </div>
-            <div class="card-body">
-                <canvas id="subjectStats"></canvas>
-            </div>
-        </div>
-    </div>
 </div>
-
-<!-- Add Subject Modal -->
-<div class="modal fade" id="addSubjectModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Add New Subject</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="addSubjectForm" method="POST" action="{{ url_for('admin.add_subject') }}">
-                    <div class="mb-3">
-                        <label class="form-label">Subject Name</label>
-                        <input type="text" class="form-control" name="name" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Add Subject</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Add Chapter Modal -->
-<div class="modal fade" id="addChapterModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Add New Chapter</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="addChapterForm" method="POST" action="{{ url_for('admin.add_chapter') }}">
-                    <input type="hidden" name="subject_id" id="subjectIdInput">
-                    <div class="mb-3">
-                        <label class="form-label">Chapter Name</label>
-                        <input type="text" class="form-control" name="name" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Add Chapter</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
 
 {% block scripts %}
 <script>
@@ -132,22 +77,37 @@ function setSubjectId(id) {
     document.getElementById('subjectIdInput').value = id;
 }
 
-function editSubject(id, name) {
-    // Implementation would go here
-    console.log('Edit subject:', id, name);
-}
-
 function deleteSubject(id) {
-    if (confirm('Are you sure you want to delete this subject?')) {
-        // Implementation would go here
-        console.log('Delete subject:', id);
+    if (confirm('Are you sure you want to delete this subject? This will also delete all associated chapters and quizzes.')) {
+        fetch(`/admin/subject/delete/${id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('Error deleting subject');
+            }
+        });
     }
 }
 
 function deleteChapter(id) {
-    if (confirm('Are you sure you want to delete this chapter?')) {
-        // Implementation would go here
-        console.log('Delete chapter:', id);
+    if (confirm('Are you sure you want to delete this chapter? This will also delete all associated quizzes.')) {
+        fetch(`/admin/chapter/delete/${id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('Error deleting chapter');
+            }
+        });
     }
 }
 </script>

@@ -286,3 +286,54 @@ def submit_quiz(quiz_id):
     db.session.commit()
     flash(f'Quiz submitted! Your score: {score}/{len(quiz.questions)}')
     return redirect(url_for('user.user_dashboard'))
+
+@admin_bp.route('/subject/delete/<int:subject_id>', methods=['POST'])
+@login_required
+def delete_subject(subject_id):
+    if not current_user.is_admin:
+        return redirect(url_for('user.user_dashboard'))
+
+    try:
+        subject = Subject.query.get_or_404(subject_id)
+        db.session.delete(subject)
+        db.session.commit()
+        flash('Subject deleted successfully')
+        return '', 200
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting subject: {str(e)}')
+        return 'Error deleting subject', 500
+
+@admin_bp.route('/chapter/delete/<int:chapter_id>', methods=['POST'])
+@login_required
+def delete_chapter(chapter_id):
+    if not current_user.is_admin:
+        return redirect(url_for('user.user_dashboard'))
+
+    try:
+        chapter = Chapter.query.get_or_404(chapter_id)
+        db.session.delete(chapter)
+        db.session.commit()
+        flash('Chapter deleted successfully')
+        return '', 200
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting chapter: {str(e)}')
+        return 'Error deleting chapter', 500
+
+@admin_bp.route('/quiz/delete/<int:quiz_id>', methods=['POST'])
+@login_required
+def delete_quiz(quiz_id):
+    if not current_user.is_admin:
+        return redirect(url_for('user.user_dashboard'))
+
+    try:
+        quiz = Quiz.query.get_or_404(quiz_id)
+        db.session.delete(quiz)
+        db.session.commit()
+        flash('Quiz deleted successfully')
+        return '', 200
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting quiz: {str(e)}')
+        return 'Error deleting quiz', 500
