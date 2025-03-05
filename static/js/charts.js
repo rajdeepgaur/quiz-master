@@ -1,18 +1,33 @@
 // Initialize charts when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    // Progress chart for user dashboard
-    const progressChart = document.getElementById('progressChart');
-    if (progressChart && typeof chartData !== 'undefined') {
-        new Chart(progressChart, {
-            type: 'line',
+    // Subject-wise attempts bar chart
+    const subjectAttemptsChart = document.getElementById('subjectAttemptsChart');
+    if (subjectAttemptsChart && typeof barChartData !== 'undefined') {
+        // Create color array based on number of subjects
+        const colors = [
+            '#0d6efd',
+            '#198754',
+            '#ffc107',
+            '#0dcaf0',
+            '#6c757d',
+            '#dc3545'
+        ];
+
+        // If there are more bars than colors, repeat the colors
+        const barColors = barChartData.labels.map((_, index) => 
+            colors[index % colors.length]
+        );
+
+        new Chart(subjectAttemptsChart, {
+            type: 'bar',
             data: {
-                labels: chartData.labels,
+                labels: barChartData.labels,
                 datasets: [{
-                    label: 'Quiz Scores',
-                    data: chartData.scores,
-                    borderColor: '#0dcaf0',
-                    tension: 0.1,
-                    fill: false
+                    label: 'Number of Attempts',
+                    data: barChartData.data,
+                    backgroundColor: barColors,
+                    borderColor: barColors,
+                    borderWidth: 1
                 }]
             },
             options: {
@@ -25,14 +40,46 @@ document.addEventListener('DOMContentLoaded', function() {
                 scales: {
                     y: {
                         beginAtZero: true,
-                        max: 100
+                        ticks: {
+                            stepSize: 1
+                        }
                     }
                 }
             }
         });
     }
 
-    // Stats chart for admin dashboard
+    // Monthly attempts pie chart
+    const monthlyAttemptsChart = document.getElementById('monthlyAttemptsChart');
+    if (monthlyAttemptsChart && typeof pieChartData !== 'undefined') {
+        new Chart(monthlyAttemptsChart, {
+            type: 'pie',
+            data: {
+                labels: pieChartData.labels,
+                datasets: [{
+                    data: pieChartData.data,
+                    backgroundColor: [
+                        '#0d6efd',
+                        '#198754',
+                        '#ffc107',
+                        '#0dcaf0',
+                        '#6c757d',
+                        '#dc3545'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+
+    // Admin dashboard charts (keeping the existing code)
     const statsChart = document.getElementById('statsChart');
     if (statsChart && typeof statsData !== 'undefined') {
         new Chart(statsChart, {
@@ -94,6 +141,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 plugins: {
                     legend: {
                         position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+    // Progress chart for user dashboard
+    const progressChart = document.getElementById('progressChart');
+    if (progressChart && typeof chartData !== 'undefined') {
+        new Chart(progressChart, {
+            type: 'line',
+            data: {
+                labels: chartData.labels,
+                datasets: [{
+                    label: 'Quiz Scores',
+                    data: chartData.scores,
+                    borderColor: '#0dcaf0',
+                    tension: 0.1,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
                     }
                 }
             }

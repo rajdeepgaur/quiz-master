@@ -297,47 +297,53 @@ def user_dashboard():
         .order_by(QuizAttempt.completed_at.desc())\
         .limit(5).all()
 
-    # Get monthly progress data
-    six_months_ago = datetime.utcnow() - timedelta(days=180)
+    # Get subject-wise quiz attempts (for bar chart)
+    subject_attempts = db.session.query(
+        Subject.name,
+        func.count(QuizAttempt.id).label('attempt_count')
+    ).select_from(Subject)\
+    .join(Chapter)\
+    .join(Quiz)\
+    .join(QuizAttempt)\
+    .filter(QuizAttempt.user_id == current_user.id)\
+    .group_by(Subject.name)\
+    .all()
 
-    # Use database-agnostic date formatting
+    # Prepare data for bar chart
+    bar_chart_data = {
+        'labels': [s[0] for s in subject_attempts],
+        'data': [s[1] for s in subject_attempts]
+    }
+
+    # Get monthly quiz attempts (for pie chart)
     if 'sqlite' in str(db.engine.url):
         # SQLite date formatting
-        monthly_scores = db.session.query(
+        monthly_attempts = db.session.query(
             func.strftime('%Y-%m', QuizAttempt.completed_at).label('month'),
-            func.avg(QuizAttempt.score).label('avg_score')
+            func.count(QuizAttempt.id).label('attempt_count')
         ).filter(
-            QuizAttempt.user_id == current_user.id,
-            QuizAttempt.completed_at >= six_months_ago
-        ).group_by('month').order_by('month').all()
+            QuizAttempt.user_id == current_user.id
+        ).group_by('month').all()
     else:
         # PostgreSQL date formatting
-        monthly_scores = db.session.query(
+        monthly_attempts = db.session.query(
             func.to_char(QuizAttempt.completed_at, 'YYYY-MM').label('month'),
-            func.avg(QuizAttempt.score).label('avg_score')
+            func.count(QuizAttempt.id).label('attempt_count')
         ).filter(
-            QuizAttempt.user_id == current_user.id,
-            QuizAttempt.completed_at >= six_months_ago
-        ).group_by('month').order_by('month').all()
+            QuizAttempt.user_id == current_user.id
+        ).group_by('month').all()
 
-    # Format data for Chart.js
-    labels = []
-    scores = []
-    for month_str, score in monthly_scores:
-        # Convert YYYY-MM to Month Year format
-        month_date = datetime.strptime(month_str, '%Y-%m')
-        labels.append(month_date.strftime('%b %Y'))
-        scores.append(round(float(score) if score else 0, 2))
-
-    chart_data = {
-        'labels': labels,
-        'scores': scores
+    # Prepare data for pie chart
+    pie_chart_data = {
+        'labels': [datetime.strptime(m[0], '%Y-%m').strftime('%b %Y') for m in monthly_attempts],
+        'data': [m[1] for m in monthly_attempts]
     }
 
     return render_template('user/dashboard.html', 
                          subjects=subjects, 
-                         attempts=attempts, 
-                         chart_data=chart_data)
+                         attempts=attempts,
+                         bar_chart_data=bar_chart_data,
+                         pie_chart_data=pie_chart_data)
 
 @user_bp.route('/quiz/<int:quiz_id>')
 @login_required

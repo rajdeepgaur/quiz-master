@@ -42,26 +42,43 @@
                 </div>
             </div>
         </div>
+
+        <!-- Subject-wise Attempts Bar Chart -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>Quizzes Attempted by Subject</h4>
+            </div>
+            <div class="card-body">
+                <canvas id="subjectAttemptsChart"></canvas>
+            </div>
+        </div>
     </div>
 
     <div class="col-md-4">
-        <div class="card">
+        <!-- Monthly Attempts Pie Chart -->
+        <div class="card mb-4">
             <div class="card-header">
-                <h4>Your Progress</h4>
+                <h4>Monthly Quiz Distribution</h4>
             </div>
             <div class="card-body">
-                <canvas id="progressChart"></canvas>
-                <div class="mt-4">
-                    <h5>Recent Attempts</h5>
-                    <div class="list-group">
-                        {% for attempt in attempts %}
-                        <div class="list-group-item">
-                            <h6 class="mb-1">{{ attempt.quiz.title }}</h6>
-                            <p class="mb-1">Score: {{ attempt.score }}/{{ attempt.quiz.questions|length }}</p>
-                            <small>{{ attempt.completed_at.strftime('%Y-%m-%d %H:%M') }}</small>
-                        </div>
-                        {% endfor %}
+                <canvas id="monthlyAttemptsChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Recent Attempts -->
+        <div class="card">
+            <div class="card-header">
+                <h4>Recent Attempts</h4>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for attempt in attempts %}
+                    <div class="list-group-item">
+                        <h6 class="mb-1">{{ attempt.quiz.title }}</h6>
+                        <p class="mb-1">Score: {{ attempt.score }}/{{ attempt.quiz.questions|length }}</p>
+                        <small>{{ attempt.completed_at.strftime('%Y-%m-%d %H:%M') }}</small>
                     </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -72,7 +89,8 @@
 {% block scripts %}
 <script>
     // Pass chart data to JavaScript
-    const chartData = {{ chart_data|tojson|safe }};
+    const barChartData = {{ bar_chart_data|tojson|safe }};
+    const pieChartData = {{ pie_chart_data|tojson|safe }};
 </script>
 <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
 {% endblock %}
