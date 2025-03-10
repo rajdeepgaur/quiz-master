@@ -7,15 +7,12 @@
     <div class="col-md-6">
         <div class="card mb-4">
             <div class="card-header">
-                <h4>Subjects</h4>
+                <h4>Subject Management</h4>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+                    Add Subject
+                </button>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ url_for('admin.add_subject') }}" class="mb-3">
-                    <div class="input-group">
-                        <input type="text" class="form-control" name="name" placeholder="Subject name" required>
-                        <button type="submit" class="btn btn-primary">Add Subject</button>
-                    </div>
-                </form>
                 <div class="list-group">
                     {% for subject in subjects %}
                     <div class="list-group-item">
@@ -51,20 +48,22 @@
         </div>
     </div>
     <div class="col-md-6">
+        <!-- Average Scores by Subject Bar Chart -->
         <div class="card mb-4">
             <div class="card-header">
-                <h4>Statistics</h4>
+                <h4>Average Scores by Subject</h4>
             </div>
             <div class="card-body">
-                <canvas id="statsChart"></canvas>
+                <canvas id="scoresChart"></canvas>
             </div>
         </div>
+        <!-- Subject-wise Attempts Chart -->
         <div class="card">
             <div class="card-header">
-                <h4>Subject Distribution</h4>
+                <h4>Attempt Distribution by Subject</h4>
             </div>
             <div class="card-body">
-                <canvas id="subjectStats"></canvas>
+                <canvas id="attemptsChart"></canvas>
             </div>
         </div>
     </div>
@@ -74,8 +73,8 @@
 {% block scripts %}
 <script>
     // Pass chart data to JavaScript
-    const statsData = {{ stats|tojson|safe }};
-    const subjectChartData = {{ subject_chart_data|tojson|safe }};
+    const barChartData = {{ bar_chart_data|tojson|safe }};
+    const donutChartData = {{ donut_chart_data|tojson|safe }};
 </script>
 <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
 <script>

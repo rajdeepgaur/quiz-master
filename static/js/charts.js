@@ -1,20 +1,183 @@
 // Initialize charts when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    // Subject-wise attempts bar chart
+    // Colors for charts
+    const colors = [
+        '#0d6efd',
+        '#198754',
+        '#ffc107',
+        '#0dcaf0',
+        '#6c757d',
+        '#dc3545'
+    ];
+
+    // Subject scores bar chart
+    const scoresChart = document.getElementById('scoresChart');
+    if (scoresChart && typeof barChartData !== 'undefined') {
+        const barColors = barChartData.labels.map((_, index) =>
+            colors[index % colors.length]
+        );
+
+        new Chart(scoresChart, {
+            type: 'bar',
+            data: {
+                labels: barChartData.labels,
+                datasets: [{
+                    label: 'Average Score',
+                    data: barChartData.data,
+                    backgroundColor: barColors,
+                    borderColor: barColors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Score: ${context.parsed.y.toFixed(1)}%`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Score (%)'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Subject attempts concentric donut chart
+    const attemptsChart = document.getElementById('attemptsChart');
+    if (attemptsChart && typeof donutChartData !== 'undefined') {
+        const dataset = donutChartData.datasets[0];
+        const totalRings = dataset.data.length;
+
+        // Create datasets for each ring
+        const datasets = dataset.data.map((value, index) => ({
+            data: Array(totalRings).fill(0),
+            backgroundColor: Array(totalRings).fill('transparent'),
+            borderWidth: 0,
+            weight: totalRings - index // Outer rings are thicker
+        }));
+
+        // Set the actual value and color for each dataset
+        datasets.forEach((ds, i) => {
+            ds.data[i] = dataset.data[i];
+            ds.backgroundColor[i] = dataset.backgroundColor[i];
+        });
+
+        new Chart(attemptsChart, {
+            type: 'doughnut',
+            data: {
+                labels: dataset.labels,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            generateLabels: function(chart) {
+                                const data = chart.data;
+                                if (data.labels.length && data.datasets.length) {
+                                    return data.labels.map((label, i) => ({
+                                        text: `${label} (${dataset.data[i]} attempts)`,
+                                        fillStyle: dataset.backgroundColor[i],
+                                        strokeStyle: dataset.backgroundColor[i],
+                                        lineWidth: 0,
+                                        hidden: false,
+                                        index: i
+                                    }));
+                                }
+                                return [];
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                return `${label}: ${value} attempts`;
+                            }
+                        }
+                    }
+                },
+                cutout: '30%'
+            }
+        });
+    }
+
+
+    // Colors for different attempt types
+    const attemptColors = {
+        'Successful Attempts': '#198754',  // Success green
+        'Failed Attempts': '#dc3545'       // Danger red
+    };
+
+    // Create individual donut charts for each subject
+    if (donutChartData && donutChartData.datasets) {
+        donutChartData.datasets.forEach((dataset, index) => {
+            const chartId = `attemptsChart${index + 1}`;
+            const ctx = document.getElementById(chartId);
+
+            if (ctx) {
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: dataset.labels,
+                        datasets: [{
+                            data: dataset.data,
+                            backgroundColor: dataset.labels.map(label => attemptColors[label]),
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 10
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.label}: ${context.raw}`;
+                                    }
+                                }
+                            }
+                        },
+                        cutout: '60%'
+                    }
+                });
+            }
+        });
+    }
+
+
+    // Subject-wise attempts bar chart (for user dashboard)
     const subjectAttemptsChart = document.getElementById('subjectAttemptsChart');
     if (subjectAttemptsChart && typeof barChartData !== 'undefined') {
-        // Create color array based on number of subjects
-        const colors = [
-            '#0d6efd',
-            '#198754',
-            '#ffc107',
-            '#0dcaf0',
-            '#6c757d',
-            '#dc3545'
-        ];
-
-        // If there are more bars than colors, repeat the colors
-        const barColors = barChartData.labels.map((_, index) => 
+        const barColors = barChartData.labels.map((_, index) =>
             colors[index % colors.length]
         );
 
@@ -49,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Monthly attempts pie chart
+    // Monthly attempts pie chart (for user dashboard)
     const monthlyAttemptsChart = document.getElementById('monthlyAttemptsChart');
     if (monthlyAttemptsChart && typeof pieChartData !== 'undefined') {
         new Chart(monthlyAttemptsChart, {
@@ -58,14 +221,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 labels: pieChartData.labels,
                 datasets: [{
                     data: pieChartData.data,
-                    backgroundColor: [
-                        '#0d6efd',
-                        '#198754',
-                        '#ffc107',
-                        '#0dcaf0',
-                        '#6c757d',
-                        '#dc3545'
-                    ]
+                    backgroundColor: colors
                 }]
             },
             options: {
@@ -78,7 +234,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-
     // Admin dashboard charts (keeping the existing code)
     const statsChart = document.getElementById('statsChart');
     if (statsChart && typeof statsData !== 'undefined') {

@@ -3,7 +3,8 @@ from flask_login import login_user, logout_user, login_required, current_user
 from app import db
 from models import User, Subject, Chapter, Quiz, Question, QuizAttempt
 from datetime import datetime, timedelta
-from sqlalchemy import func
+from sqlalchemy import func, case, text
+from sqlalchemy.types import Float
 
 auth_bp = Blueprint('auth', __name__)
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -98,25 +99,66 @@ def dashboard():
         'avg_score': db.session.query(func.avg(QuizAttempt.score)).scalar() or 0
     }
 
-    # Get subject statistics with explicit joins
-    subject_stats = db.session.query(
-        Subject.name,
-        func.count(Quiz.id).label('quiz_count')
+    # Get top scores by subject for bar chart
+    colors = [
+        '#0d6efd',  # Primary blue
+        '#198754',  # Success green
+        '#ffc107',  # Warning yellow
+        '#0dcaf0',  # Info cyan
+        '#6c757d',  # Secondary gray
+        '#dc3545'   # Danger red
+    ]
+
+    total_questions = db.session.query(
+        Quiz.id.label('quiz_id'),
+        func.count(Question.id).label('question_count')
+    ).join(Question, Question.quiz_id == Quiz.id)\
+    .group_by(Quiz.id).subquery()
+
+    top_scores = db.session.query(
+        Subject.name.label('subject_name'),
+        func.avg(
+            (100.0 * QuizAttempt.score / total_questions.c.question_count).cast(Float)
+        ).label('avg_score')
     ).select_from(Subject)\
-    .outerjoin(Chapter, Chapter.subject_id == Subject.id)\
-    .outerjoin(Quiz, Quiz.chapter_id == Chapter.id)\
+    .join(Chapter, Chapter.subject_id == Subject.id)\
+    .join(Quiz, Quiz.chapter_id == Chapter.id)\
+    .join(QuizAttempt)\
+    .join(total_questions, total_questions.c.quiz_id == Quiz.id)\
     .group_by(Subject.name)\
+    .order_by(text('avg_score DESC'))\
     .all()
 
-    subject_chart_data = {
-        'labels': [s[0] for s in subject_stats],
-        'data': [s[1] for s in subject_stats]
+    bar_chart_data = {
+        'labels': [s.subject_name for s in top_scores],
+        'data': [round(float(s.avg_score), 2) if s.avg_score else 0 for s in top_scores]
+    }
+
+    # Get subject-wise attempt distribution for concentric donut chart
+    attempt_distribution = db.session.query(
+        Subject.name.label('subject_name'),
+        func.count(QuizAttempt.id).label('attempt_count')
+    ).select_from(Subject)\
+    .join(Chapter, Chapter.subject_id == Subject.id)\
+    .join(Quiz, Quiz.chapter_id == Chapter.id)\
+    .join(QuizAttempt)\
+    .group_by(Subject.name)\
+    .order_by(func.count(QuizAttempt.id).desc())\
+    .all()
+
+    donut_chart_data = {
+        'datasets': [{
+            'data': [s.attempt_count for s in attempt_distribution],
+            'backgroundColor': colors,
+            'labels': [s.subject_name for s in attempt_distribution]
+        }]
     }
 
     return render_template('admin/dashboard.html', 
                          subjects=subjects,
                          stats=stats,
-                         subject_chart_data=subject_chart_data)
+                         bar_chart_data=bar_chart_data,
+                         donut_chart_data=donut_chart_data)
 
 @admin_bp.route('/subject/add', methods=['POST'])
 @login_required
